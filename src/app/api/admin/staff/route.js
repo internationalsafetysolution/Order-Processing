@@ -64,7 +64,7 @@ export async function POST(request) {
     if (userRole === 'STAFF') {
       const portalUrl = process.env.FRONTEND_URL 
         ? (process.env.FRONTEND_URL.startsWith('http') ? process.env.FRONTEND_URL : `https://${process.env.FRONTEND_URL}`)
-        : 'http://localhost:3000';
+        : 'https://order.internationalsafetysolution.com';
 
       sendSystemEmail('staff_registered', {
         direct_recipient: cleanEmail,
