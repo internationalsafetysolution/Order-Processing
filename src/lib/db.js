@@ -52,7 +52,7 @@ async function ensureDatabaseAndPool() {
   try {
     const host = process.env.DB_HOST;
     const user = process.env.DB_USER;
-    const password = process.env.DB_PASSWORD || '';
+    const password = process.env.DB_PASSWORD || process.env.DB_PASS || '';
     const database = process.env.DB_NAME;
     const port = parseInt(process.env.DB_PORT || '3306');
 
@@ -635,23 +635,24 @@ function handleMockQuery(sql, params) {
     const userId = parseInt(params[params.length - 1]);
     const idx = db.users.findIndex(u => u.id === userId);
     if (idx !== -1) {
+      let pIdx = 0;
+      if (sqlNormalized.includes('name = ?')) {
+        db.users[idx].name = params[pIdx++];
+      }
+      if (sqlNormalized.includes('email = ?')) {
+        db.users[idx].email = params[pIdx++];
+      }
       if (sqlNormalized.includes('password = ?')) {
-        // Includes password update
-        db.users[idx].name = params[0];
-        db.users[idx].email = params[1];
-        db.users[idx].password = params[2];
-        db.users[idx].designation = params[3];
-        if (sqlNormalized.includes('permission_scopes = ?')) {
-          db.users[idx].permission_scopes = params[4];
-        }
-      } else {
-        // Excludes password update
-        db.users[idx].name = params[0];
-        db.users[idx].email = params[1];
-        db.users[idx].designation = params[2];
-        if (sqlNormalized.includes('permission_scopes = ?')) {
-          db.users[idx].permission_scopes = params[3];
-        }
+        db.users[idx].password = params[pIdx++];
+      }
+      if (sqlNormalized.includes('role = ?')) {
+        db.users[idx].role = params[pIdx++];
+      }
+      if (sqlNormalized.includes('designation = ?')) {
+        db.users[idx].designation = params[pIdx++];
+      }
+      if (sqlNormalized.includes('permission_scopes = ?')) {
+        db.users[idx].permission_scopes = params[pIdx++];
       }
       writeMockDb(db);
       return { affectedRows: 1 };
