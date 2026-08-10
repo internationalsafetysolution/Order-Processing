@@ -39,38 +39,26 @@ let pool = global.mysqlPool || null;
 let mysqlFailed = false;
 
 async function ensureDatabaseAndPool() {
-  if (!pool && global.mysqlPool) {
+  if (global.mysqlPool) {
     pool = global.mysqlPool;
+    return pool;
   }
   if (pool) return pool;
-  if (mysqlFailed) return null;
 
   if (!isMySQLConfigured()) {
     return null;
   }
 
   try {
-    const host = process.env.DB_HOST;
+    const host = process.env.DB_HOST || 'localhost';
     const user = process.env.DB_USER;
     const password = process.env.DB_PASSWORD || process.env.DB_PASS || '';
     const database = process.env.DB_NAME;
-    const port = parseInt(process.env.DB_PORT || '3306');
+    const port = parseInt(process.env.DB_PORT || '3306', 10);
 
     console.log(`Connecting to MySQL at ${host}:${port} as ${user}...`);
 
-    // 1. Create a temporary connection to ensure the database exists
-    const tempConnection = await mysql.createConnection({
-      host,
-      user,
-      password,
-      port
-    });
-    
-    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${database}\``);
-    await tempConnection.end();
-    console.log(`Database "${database}" verified/created successfully.`);
-
-    // 2. Initialize the connection pool with global caching and connection reuse
+    // Initialize the connection pool directly without unprivileged CREATE DATABASE checks
     pool = mysql.createPool({
       host,
       user,
@@ -78,17 +66,14 @@ async function ensureDatabaseAndPool() {
       database,
       port,
       waitForConnections: true,
-      connectionLimit: 5,
+      connectionLimit: 10,
       queueLimit: 0,
-      idleTimeout: 30000, // 30 seconds idle timeout to reap inactive connections
+      idleTimeout: 60000,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      global.mysqlPool = pool;
-    }
-
+    global.mysqlPool = pool;
     console.log('MySQL Connection Pool created successfully.');
     
     // Auto-create settings table if it doesn't exist
@@ -212,9 +197,9 @@ async function ensureDatabaseAndPool() {
 
     return pool;
   } catch (error) {
-    console.error('MySQL Connection/Creation failed. Using fallback DB. Error:', error.message);
-    mysqlFailed = true;
+    console.error('MySQL Connection/Creation failed:', error.message);
     pool = null;
+    global.mysqlPool = null;
     return null;
   }
 }
