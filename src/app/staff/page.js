@@ -265,10 +265,18 @@ export default function StaffDashboard() {
     setSuccessMessage('');
 
     try {
-      // Upload WebP images in parallel
+      const currentOrder = orders.find(o => o.id === orderId);
+      const isInvoice = actionType === 'COMPLETE_TASK_2' || actionType === 'REUPLOAD_TASK_2';
+      const docType = isInvoice ? 'Invoice' : 'DC';
+      const clientName = currentOrder ? currentOrder.client_name : '';
+
+      // Upload files in parallel
       const uploadPromises = list.map(async ({ file }) => {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('docType', docType);
+        formData.append('orderNo', orderId);
+        if (clientName) formData.append('clientName', clientName);
 
         const res = await fetch('/api/upload', {
           method: 'POST',

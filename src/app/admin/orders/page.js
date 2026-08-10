@@ -202,9 +202,16 @@ export default function ClientOrders() {
       // Upload PO files if any
       let poFilePath = '';
       if (poFiles.length > 0) {
+        const selectedClientObj = clients.find(c => c.id === parseInt(clientId));
+        const clientName = selectedClientObj ? selectedClientObj.name : '';
+        const nextOrderNo = orders && orders.length > 0 ? (Math.max(...orders.map(o => o.id)) + 1) : 1;
+
         const uploadPromises = poFiles.map(async ({ file }) => {
           const formData = new FormData();
           formData.append('file', file);
+          formData.append('docType', 'PO');
+          formData.append('orderNo', nextOrderNo);
+          if (clientName) formData.append('clientName', clientName);
 
           const res = await fetch('/api/upload', {
             method: 'POST',
@@ -396,9 +403,15 @@ export default function ClientOrders() {
       let poFilePath = '';
 
       if (newFilesToUpload.length > 0) {
+        const selectedClientObj = clients.find(c => c.id === parseInt(clientId));
+        const clientName = selectedClientObj ? selectedClientObj.name : (editingOrder?.client_name || '');
+
         const uploadPromises = newFilesToUpload.map(async ({ file }) => {
           const formData = new FormData();
           formData.append('file', file);
+          formData.append('docType', 'PO');
+          if (editingOrder) formData.append('orderNo', editingOrder.id);
+          if (clientName) formData.append('clientName', clientName);
 
           const res = await fetch('/api/upload', {
             method: 'POST',
