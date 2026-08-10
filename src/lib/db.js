@@ -11,7 +11,7 @@ const initialMockData = {
       id: 1,
       email: 'internationalsafetysolution@gmail.com',
       password: 'Admin@1236#',
-      name: 'Admin User',
+      name: 'System Administrator',
       role: 'ADMIN',
       designation: null
     }

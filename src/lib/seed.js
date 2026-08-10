@@ -218,7 +218,7 @@ export async function seedDatabase() {
       // Default Admin
       await query(
         'INSERT INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
-        ['internationalsafetysolution@gmail.com', 'Admin@1236#', 'Admin User', 'ADMIN', null]
+        ['internationalsafetysolution@gmail.com', 'Admin@1236#', 'System Administrator', 'ADMIN', null]
       );
       // Seed mock clients
       await query(
