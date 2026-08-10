@@ -307,7 +307,11 @@ export default function IntegrationSettings() {
       .replace(/\[courier_id\]/g, 'TRK-4819028')
       .replace(/\[stage_number\]/g, '2')
       .replace(/\[buffer_time\]/g, '20 mins')
-      .replace(/\[completion_time\]/g, new Date().toLocaleTimeString());
+      .replace(/\[completion_time\]/g, new Date().toLocaleTimeString())
+      .replace(/\[user_name\]/g, 'Badar Munir')
+      .replace(/\[user_email\]/g, 'badar@company.com')
+      .replace(/\[temp_password\]/g, '12345678')
+      .replace(/\[portal_url\]/g, 'https://portal.company.com');
   };
 
   if (loading) {

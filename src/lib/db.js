@@ -193,10 +193,17 @@ async function ensureDatabaseAndPool() {
           ('stage1_completed', 'Stage 1 Completed', 'Order #[order_id] - Stage 1 (Delivery Challan) Completed', '<h3>Hello Accounts Department,</h3><p>Stage 1 has been completed for order #<strong>[order_id]</strong>. Received by: [receiver_name].</p><p>Invoice uploading is now pending for your action.</p>', ?, 1, 0, 1, 0),
           ('stage2_completed', 'Stage 2 Completed', 'Order #[order_id] - Stage 2 (Invoice) Completed', '<h3>Hello Logistics Department,</h3><p>Stage 2 has been completed for order #<strong>[order_id]</strong>.</p><p>Courier dispatch registration is now pending for your action.</p>', ?, 1, 0, 0, 1),
           ('order_completed', 'Order Completed', 'Order #[order_id] Completed & Dispatched', '<h3>Dear client [client_name],</h3><p>Your order #<strong>[order_id]</strong> is now fully complete.</p><p>Courier tracking ID: [courier_id].</p>', ?, 1, 1, 1, 1),
-          ('reupload_requested', 'Task Reupload Request', 'Reupload Required for Order #[order_id]', '<h3>Hello,</h3><p>A reupload request has been generated for order #<strong>[order_id]</strong>.</p><p>Please upload the corrected documents within the portal before the buffer timer expires.</p>', ?, 1, 1, 1, 1),
-          ('staff_registered', 'Staff Account Registered', 'Welcome to ISS Portal - Your Account Credentials', '<h3>Welcome [user_name],</h3><p>Your staff account has been created on the ISS Portal.</p><p><strong>Email:</strong> [user_email]</p><p><strong>Temporary Password:</strong> [temp_password]</p><p>Please log in to your account at [portal_url] and change your password on first login.</p>', ?, 0, 0, 0, 0)
-        `, [allVariables, allVariables, allVariables, allVariables, allVariables, 'user_name, user_email, temp_password, portal_url']);
+          ('reupload_requested', 'Task Reupload Request', 'Reupload Required for Order #[order_id]', '<h3>Hello,</h3><p>A reupload request has been generated for order #<strong>[order_id]</strong>.</p><p>Please upload the corrected documents within the portal before the buffer timer expires.</p>', ?, 1, 1, 1, 1)
+        `, [allVariables, allVariables, allVariables, allVariables, allVariables]);
       }
+
+      // Guarantee staff_registered template is present on existing databases
+      try {
+        await pool.execute(`
+          INSERT IGNORE INTO email_templates (template_key, name, subject, body, variables, notify_admin, notify_staff_1, notify_staff_2, notify_staff_3) VALUES 
+          ('staff_registered', 'Staff Account Registered', 'Welcome to ISS Portal - Your Account Credentials', '<h3>Welcome [user_name],</h3><p>Your staff account has been created on the ISS Portal.</p><p><strong>Email:</strong> [user_email]</p><p><strong>Temporary Password:</strong> [temp_password]</p><p>Please log in to your account at [portal_url] and change your password on first login.</p>', 'user_name, user_email, temp_password, portal_url', 0, 0, 0, 0)
+        `);
+      } catch (e) {}
 
       console.log('MySQL email_templates table verified/created.');
     } catch (e) {
