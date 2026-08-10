@@ -287,9 +287,13 @@ function handleMockQuery(sql, params) {
   // SELECT * FROM users
   if (sqlNormalized.startsWith('select') && sqlNormalized.includes('from users')) {
     let list = db.users;
-    if (sqlNormalized.includes('where email = ?')) {
+    if (sqlNormalized.includes('where email = ?') && sqlNormalized.includes('id != ?')) {
       const email = params[0];
-      list = list.filter(u => u.email.toLowerCase() === email.toLowerCase());
+      const excludeId = parseInt(params[1]);
+      list = list.filter(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.id !== excludeId);
+    } else if (sqlNormalized.includes('where email = ?')) {
+      const email = params[0];
+      list = list.filter(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
     } else if (sqlNormalized.includes('where designation = ?')) {
       const des = params[0];
       list = list.filter(u => u.designation === des);

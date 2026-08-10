@@ -30,7 +30,8 @@ export async function PUT(request, context) {
     }
 
     // Check if email belongs to someone else
-    const existing = await query('SELECT id FROM users WHERE email = ? AND id != ?', [email, staffId]);
+    const cleanEmail = email.trim().toLowerCase();
+    const existing = await query('SELECT id FROM users WHERE email = ? AND id != ?', [cleanEmail, staffId]);
     if (existing && existing.length > 0) {
       return Response.json({ error: 'Another user already has this email' }, { status: 400 });
     }
