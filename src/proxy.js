@@ -28,46 +28,42 @@ export function proxy(request) {
     }
   }
 
+  let response;
+
   // 1. Not logged in -> redirect to /login for protected routes & root /
   if (!user) {
     if (pathname.startsWith('/admin') || pathname.startsWith('/staff') || pathname === '/') {
       const loginUrl = new URL('/login', request.url);
-      return NextResponse.redirect(loginUrl, 307);
+      response = NextResponse.redirect(loginUrl, 307);
+    } else {
+      response = NextResponse.next();
     }
-    return NextResponse.next();
-  }
-
-  // 2. Logged in -> handle routing rules
-  if (user) {
-    // If accessing root / -> redirect to appropriate portal
-    if (pathname === '/') {
+  } else {
+    // 2. Logged in -> handle routing rules
+    if (pathname === '/' || pathname.startsWith('/login')) {
       const target = user.role === 'ADMIN' ? '/admin' : '/staff';
-      return NextResponse.redirect(new URL(target, request.url), 307);
-    }
-
-    // Accessing login while logged in -> redirect to portal
-    if (pathname.startsWith('/login')) {
-      const target = user.role === 'ADMIN' ? '/admin' : '/staff';
-      return NextResponse.redirect(new URL(target, request.url), 307);
-    }
-
-    // Accessing Admin routes as Staff
-    if (pathname.startsWith('/admin') && user.role !== 'ADMIN') {
+      response = NextResponse.redirect(new URL(target, request.url), 307);
+    } else if (pathname.startsWith('/admin') && user.role !== 'ADMIN') {
       if (pathname.startsWith('/admin/orders') || pathname.startsWith('/admin/clients')) {
-        return NextResponse.next();
+        response = NextResponse.next();
+      } else {
+        response = NextResponse.redirect(new URL('/staff', request.url), 307);
       }
-      return NextResponse.redirect(new URL('/staff', request.url), 307);
-    }
-
-    // Accessing Staff routes as Admin -> redirect to admin
-    if (pathname.startsWith('/staff') && user.role !== 'STAFF') {
-      return NextResponse.redirect(new URL('/admin', request.url), 307);
+    } else if (pathname.startsWith('/staff') && user.role !== 'STAFF') {
+      response = NextResponse.redirect(new URL('/admin', request.url), 307);
+    } else {
+      response = NextResponse.next();
     }
   }
 
-  return NextResponse.next();
+  // Prevent mobile browsers from caching HTML navigation pages with stale CSS/JS chunk hashes
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/', '/login', '/admin/:path*', '/staff/:path*'],
 };
