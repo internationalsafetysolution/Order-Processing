@@ -11,15 +11,22 @@ export async function PUT(request, context) {
   const staffId = parseInt(id);
 
   try {
-    const { name, email, password, designation, permissionScopes } = await request.json();
+    const { name, email, password, role = 'STAFF', designation, permissionScopes } = await request.json();
 
-    if (!name || !email || !designation) {
-      return Response.json({ error: 'Name, email, and designation are required' }, { status: 400 });
+    if (!name || !email) {
+      return Response.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
-    const validDesignations = ['TASK_COMPLETION', 'INVOICE_CREATION', 'INVOICE_COURIER'];
-    if (!validDesignations.includes(designation)) {
-      return Response.json({ error: 'Invalid designation selection' }, { status: 400 });
+    const userRole = role === 'ADMIN' ? 'ADMIN' : 'STAFF';
+    let userDesignation = designation;
+
+    if (userRole === 'ADMIN') {
+      userDesignation = null;
+    } else {
+      const validDesignations = ['TASK_COMPLETION', 'INVOICE_CREATION', 'INVOICE_COURIER'];
+      if (!validDesignations.includes(designation)) {
+        return Response.json({ error: 'Invalid designation selection for staff member' }, { status: 400 });
+      }
     }
 
     // Check if email belongs to someone else
@@ -31,18 +38,18 @@ export async function PUT(request, context) {
     if (password && password.trim() !== '') {
       // Update with new password
       await query(
-        'UPDATE users SET name = ?, email = ?, password = ?, designation = ?, permission_scopes = ? WHERE id = ?',
-        [name, email, password, designation, permissionScopes || null, staffId]
+        'UPDATE users SET name = ?, email = ?, password = ?, role = ?, designation = ?, permission_scopes = ? WHERE id = ?',
+        [name, email, password, userRole, userDesignation, permissionScopes || null, staffId]
       );
     } else {
       // Update without changing password
       await query(
-        'UPDATE users SET name = ?, email = ?, designation = ?, permission_scopes = ? WHERE id = ?',
-        [name, email, designation, permissionScopes || null, staffId]
+        'UPDATE users SET name = ?, email = ?, role = ?, designation = ?, permission_scopes = ? WHERE id = ?',
+        [name, email, userRole, userDesignation, permissionScopes || null, staffId]
       );
     }
 
-    return Response.json({ success: true, message: 'Staff member updated successfully' });
+    return Response.json({ success: true, message: 'User account updated successfully' });
   } catch (error) {
     console.error('Update staff API error:', error);
     return Response.json({ error: 'Failed to update staff member' }, { status: 500 });

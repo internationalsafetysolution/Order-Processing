@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserPlus, Mail, shieldAlert, KeyRound, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2 } from 'lucide-react';
+import { Users, UserPlus, Mail, KeyRound, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2, ShieldCheck } from 'lucide-react';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function StaffManagement() {
@@ -22,6 +22,7 @@ export default function StaffManagement() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('STAFF');
   const [designation, setDesignation] = useState('TASK_COMPLETION');
   const [scopes, setScopes] = useState([]);
   const [selectedScopes, setSelectedScopes] = useState([]);
@@ -67,6 +68,7 @@ export default function StaffManagement() {
     setName('');
     setEmail('');
     setPassword('');
+    setRole('STAFF');
     setDesignation('TASK_COMPLETION');
     setSelectedScopes([]);
     setMessage({ text: '', type: '' });
@@ -79,7 +81,8 @@ export default function StaffManagement() {
     setName(member.name);
     setEmail(member.email);
     setPassword(''); // Keep blank unless updating password
-    setDesignation(member.designation);
+    setRole(member.role || 'STAFF');
+    setDesignation(member.designation || 'TASK_COMPLETION');
     
     // Parse permission scopes
     const scopesStr = member.permission_scopes || '';
@@ -102,7 +105,8 @@ export default function StaffManagement() {
       const payload = { 
         name, 
         email, 
-        designation,
+        role,
+        designation: role === 'ADMIN' ? null : designation,
         permissionScopes: selectedScopes.join(',')
       };
       if (!isEditMode) {
@@ -120,11 +124,11 @@ export default function StaffManagement() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit staff form');
+        throw new Error(data.error || 'Failed to submit form');
       }
 
       setMessage({
-        text: isEditMode ? 'Staff member updated successfully!' : 'Staff account successfully created!',
+        text: isEditMode ? 'User account updated successfully!' : 'User account successfully created!',
         type: 'success'
       });
 
@@ -156,7 +160,7 @@ export default function StaffManagement() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to delete staff member');
+        throw new Error(data.error || 'Failed to delete user');
       }
 
       setShowDeleteModal(false);
@@ -169,8 +173,16 @@ export default function StaffManagement() {
     }
   };
 
-  const getDesignationLabel = (des) => {
-    switch (des) {
+  const getDesignationLabel = (member) => {
+    if (member.role === 'ADMIN' || !member.designation) {
+      return (
+        <span className="px-2 py-1 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold rounded-md flex items-center gap-1 shrink-0">
+          <ShieldCheck className="h-3.5 w-3.5 text-purple-600 shrink-0" />
+          System Admin (Full Access)
+        </span>
+      );
+    }
+    switch (member.designation) {
       case 'TASK_COMPLETION':
         return <span className="px-2 py-1 bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold rounded-md">Phase 1: Task Completion (DC Upload)</span>;
       case 'INVOICE_CREATION':
@@ -178,7 +190,7 @@ export default function StaffManagement() {
       case 'INVOICE_COURIER':
         return <span className="px-2 py-1 bg-sky-50 border border-sky-200 text-sky-700 text-xs font-semibold rounded-md">Phase 3: Courier (Tracking ID)</span>;
       default:
-        return <span className="px-2 py-1 bg-zinc-100 border border-zinc-200 text-zinc-500 text-xs font-semibold rounded-md">{des || 'Admin'}</span>;
+        return <span className="px-2 py-1 bg-zinc-100 border border-zinc-200 text-zinc-500 text-xs font-semibold rounded-md">{member.designation}</span>;
     }
   };
 
@@ -243,13 +255,16 @@ export default function StaffManagement() {
 
                   {/* Row 2: Designation Badge */}
                   <div className="flex flex-wrap gap-1.5">
-                    {getDesignationLabel(member.designation)}
+                    {getDesignationLabel(member)}
                   </div>
 
                   {/* Row 3: Scopes Badges */}
                   <div className="flex flex-wrap gap-1 items-center">
                     <span className="text-[9px] font-bold text-zinc-400 mr-1 uppercase tracking-wider">Scopes:</span>
                     {(() => {
+                      if (member.role === 'ADMIN') {
+                        return <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[9px] font-bold rounded">Full Access</span>;
+                      }
                       const ids = (member.permission_scopes || '').split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
                       const assigned = scopes.filter(s => ids.includes(s.id));
                       if (assigned.length === 0) {
@@ -295,7 +310,7 @@ export default function StaffManagement() {
                   <tr>
                     <th className="px-6 py-4">Name</th>
                     <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Designation</th>
+                    <th className="px-6 py-4">Role & Designation</th>
                     <th className="px-6 py-4">Permissions Scope</th>
                     <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
@@ -310,11 +325,14 @@ export default function StaffManagement() {
                         {member.email}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
-                        {getDesignationLabel(member.designation)}
+                        {getDesignationLabel(member)}
                       </td>
                       <td className="px-6 py-4 text-xs text-zinc-500">
                         <div className="flex flex-wrap gap-1.5 max-w-xs">
                           {(() => {
+                            if (member.role === 'ADMIN') {
+                              return <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-bold rounded">Full Access</span>;
+                            }
                             const ids = (member.permission_scopes || '').split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
                             const assigned = scopes.filter(s => ids.includes(s.id));
                             if (assigned.length === 0) {
@@ -441,17 +459,41 @@ export default function StaffManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Fallback Task Phase</label>
+                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Account Role & Privileges</label>
                 <select
-                  value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
-                  className="block w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange bg-[image:none]"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="block w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange"
                 >
-                  <option value="TASK_COMPLETION">Phase 1: Task Completion (Delivery Challan Upload)</option>
-                  <option value="INVOICE_CREATION">Phase 2: Invoice Creation (Invoice Upload)</option>
-                  <option value="INVOICE_COURIER">Phase 3: Courier Dispatch (Tracking ID Entry)</option>
+                  <option value="STAFF">Staff Member (Restricted Workflow Access)</option>
+                  <option value="ADMIN">System Administrator (Full Master Access)</option>
                 </select>
               </div>
+
+              {role === 'ADMIN' ? (
+                <div className="p-3.5 bg-purple-50 border border-purple-200 text-purple-900 rounded-xl text-xs space-y-1">
+                  <p className="font-bold flex items-center gap-1.5 text-purple-700">
+                    <ShieldCheck className="h-4 w-4 text-purple-600 shrink-0" />
+                    Full Master Admin Privileges Active
+                  </p>
+                  <p className="text-purple-700/90 leading-relaxed">
+                    System Administrators have full master access across all 3 order phases (DC, Invoice, Courier), client management, staff accounts, order creation, and settings panels. Fallback Task Phase is not required.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Fallback Task Phase</label>
+                  <select
+                    value={designation}
+                    onChange={(e) => setDesignation(e.target.value)}
+                    className="block w-full px-3 py-2 border border-zinc-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange bg-[image:none]"
+                  >
+                    <option value="TASK_COMPLETION">Phase 1: Task Completion (Delivery Challan Upload)</option>
+                    <option value="INVOICE_CREATION">Phase 2: Invoice Creation (Invoice Upload)</option>
+                    <option value="INVOICE_COURIER">Phase 3: Courier Dispatch (Tracking ID Entry)</option>
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-2">Granted Access Scopes</label>

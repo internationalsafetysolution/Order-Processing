@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   try {
-    const staff = await query("SELECT id, email, name, role, designation, permission_scopes FROM users WHERE role = 'STAFF'");
+    const staff = await query("SELECT id, email, name, role, designation, permission_scopes FROM users ORDER BY id ASC");
     return Response.json(staff);
   } catch (error) {
     console.error('Fetch staff error:', error);
@@ -25,37 +25,43 @@ export async function POST(request) {
   }
 
   try {
-    const { name, email, password, designation, permissionScopes } = await request.json();
+    const { name, email, password, role = 'STAFF', designation, permissionScopes } = await request.json();
 
-    if (!name || !email || !password || !designation) {
-      return Response.json({ error: 'All fields are required' }, { status: 400 });
+    if (!name || !email || !password) {
+      return Response.json({ error: 'Name, email, and password are required' }, { status: 400 });
     }
 
-    // Verify designation is one of the three
-    const validDesignations = ['TASK_COMPLETION', 'INVOICE_CREATION', 'INVOICE_COURIER'];
-    if (!validDesignations.includes(designation)) {
-      return Response.json({ error: 'Invalid designation selection' }, { status: 400 });
+    const userRole = role === 'ADMIN' ? 'ADMIN' : 'STAFF';
+    let userDesignation = designation;
+
+    if (userRole === 'ADMIN') {
+      userDesignation = null;
+    } else {
+      const validDesignations = ['TASK_COMPLETION', 'INVOICE_CREATION', 'INVOICE_COURIER'];
+      if (!validDesignations.includes(designation)) {
+        return Response.json({ error: 'Invalid designation selection for staff member' }, { status: 400 });
+      }
     }
 
     // Check if user already exists
     const existing = await query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing && existing.length > 0) {
-      return Response.json({ error: 'Staff account with this email already exists' }, { status: 400 });
+      return Response.json({ error: 'Account with this email already exists' }, { status: 400 });
     }
 
-    // Insert staff
+    // Insert user
     const result = await query(
       'INSERT INTO users (email, password, name, role, designation, permission_scopes) VALUES (?, ?, ?, ?, ?, ?)',
-      [email, password, name, 'STAFF', designation, permissionScopes || null]
+      [email, password, name, userRole, userDesignation, permissionScopes || null]
     );
 
     return Response.json({
       success: true,
-      message: 'Staff created successfully',
+      message: 'Account created successfully',
       staffId: result.insertId
     });
   } catch (error) {
     console.error('Create staff error:', error);
-    return Response.json({ error: 'Failed to create staff account' }, { status: 500 });
+    return Response.json({ error: 'Failed to create account' }, { status: 500 });
   }
 }
