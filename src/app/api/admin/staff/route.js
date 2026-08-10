@@ -1,5 +1,6 @@
 import { query } from '@/lib/db';
 import { getSession, getUserPermissions } from '@/lib/auth';
+import { sendSystemEmail } from '@/lib/mailer';
 
 export async function GET() {
   const session = await getSession();
@@ -10,7 +11,7 @@ export async function GET() {
   }
 
   try {
-    const staff = await query("SELECT id, email, name, role, designation, permission_scopes FROM users ORDER BY id ASC");
+    const staff = await query("SELECT id, email, name, role, designation, permission_scopes, must_change_password FROM users ORDER BY id ASC");
     return Response.json(staff);
   } catch (error) {
     console.error('Fetch staff error:', error);
@@ -27,12 +28,16 @@ export async function POST(request) {
   try {
     const { name, email, password, role = 'STAFF', designation, permissionScopes } = await request.json();
 
-    if (!name || !email || !password) {
-      return Response.json({ error: 'Name, email, and password are required' }, { status: 400 });
+    const finalPassword = (password && password.trim()) ? password.trim() : '12345678';
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!name || !cleanEmail) {
+      return Response.json({ error: 'Name and email are required' }, { status: 400 });
     }
 
     const userRole = role === 'ADMIN' ? 'ADMIN' : 'STAFF';
     let userDesignation = designation;
+    const mustChangePassword = userRole === 'STAFF' ? 1 : 0;
 
     if (userRole === 'ADMIN') {
       userDesignation = null;
@@ -44,20 +49,35 @@ export async function POST(request) {
     }
 
     // Check if user already exists
-    const existing = await query('SELECT id FROM users WHERE email = ?', [email]);
+    const existing = await query('SELECT id FROM users WHERE LOWER(email) = ?', [cleanEmail]);
     if (existing && existing.length > 0) {
       return Response.json({ error: 'Account with this email already exists' }, { status: 400 });
     }
 
     // Insert user
     const result = await query(
-      'INSERT INTO users (email, password, name, role, designation, permission_scopes) VALUES (?, ?, ?, ?, ?, ?)',
-      [email, password, name, userRole, userDesignation, permissionScopes || null]
+      'INSERT INTO users (email, password, name, role, designation, permission_scopes, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [cleanEmail, finalPassword, name, userRole, userDesignation, permissionScopes || null, mustChangePassword]
     );
+
+    // Send email notification to new staff member
+    if (userRole === 'STAFF') {
+      const portalUrl = process.env.FRONTEND_URL 
+        ? (process.env.FRONTEND_URL.startsWith('http') ? process.env.FRONTEND_URL : `https://${process.env.FRONTEND_URL}`)
+        : 'http://localhost:3000';
+
+      sendSystemEmail('staff_registered', {
+        direct_recipient: cleanEmail,
+        user_name: name,
+        user_email: cleanEmail,
+        temp_password: finalPassword,
+        portal_url: portalUrl
+      }).catch(e => console.error('Failed to dispatch staff registration email:', e));
+    }
 
     return Response.json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created successfully and registration email dispatched',
       staffId: result.insertId
     });
   } catch (error) {

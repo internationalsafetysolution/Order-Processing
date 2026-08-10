@@ -13,6 +13,7 @@ export async function setSession(user) {
     role: user.role,
     designation: user.designation,
     permission_scopes: user.permission_scopes || null,
+    must_change_password: !!user.must_change_password,
     loginTime: new Date().toISOString()
   };
   

@@ -16,9 +16,14 @@ export async function seedDatabase() {
         password VARCHAR(255) NOT NULL,
         name VARCHAR(255) NOT NULL,
         role VARCHAR(50) NOT NULL,
-        designation VARCHAR(100) NULL
+        designation VARCHAR(100) NULL,
+        must_change_password TINYINT NOT NULL DEFAULT 0
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
+
+    try {
+      await query('ALTER TABLE users ADD COLUMN must_change_password TINYINT NOT NULL DEFAULT 0');
+    } catch (e) {}
 
     // Create clients table
     await query(`

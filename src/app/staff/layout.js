@@ -1,6 +1,7 @@
 import { getSession, clearSession, getUserPermissions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import StaffSidebar from './StaffSidebar';
+import FirstTimePasswordModal from '@/components/FirstTimePasswordModal';
 
 export default async function StaffLayout({ children }) {
   const session = await getSession();
@@ -28,6 +29,9 @@ export default async function StaffLayout({ children }) {
 
   return (
     <div className="flex min-h-screen bg-zinc-50 text-zinc-950">
+      {/* First Time Password Change Modal */}
+      <FirstTimePasswordModal mustChangePassword={!!sessionWithPermissions?.must_change_password} />
+
       {/* Staff Sidebar Left Navigation */}
       <StaffSidebar session={sessionWithPermissions} handleLogoutAction={handleLogout} />
 

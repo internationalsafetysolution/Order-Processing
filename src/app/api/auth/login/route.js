@@ -50,7 +50,8 @@ export async function POST(request) {
         email: user.email,
         name: user.name,
         role: user.role,
-        designation: user.designation
+        designation: user.designation,
+        must_change_password: !!user.must_change_password
       }
     });
   } catch (error) {
