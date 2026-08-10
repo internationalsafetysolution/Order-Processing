@@ -1,4 +1,5 @@
 import { getSession, clearSession, getUserPermissions } from '@/lib/auth';
+import { query } from '@/lib/db';
 import { redirect } from 'next/navigation';
 import StaffSidebar from './StaffSidebar';
 import FirstTimePasswordModal from '@/components/FirstTimePasswordModal';
@@ -7,6 +8,19 @@ export default async function StaffLayout({ children }) {
   const session = await getSession();
   const permissions = await getUserPermissions(session);
   const sessionWithPermissions = session ? { ...session, permissions } : null;
+
+  // Real-time check from DB if user must change password
+  let mustChangePassword = !!session?.must_change_password;
+  if (session?.id) {
+    try {
+      const userRows = await query('SELECT must_change_password FROM users WHERE id = ?', [session.id]);
+      if (userRows && userRows.length > 0) {
+        mustChangePassword = userRows[0].must_change_password === 1 || userRows[0].must_change_password === true;
+      }
+    } catch (e) {
+      console.error('Failed to check live must_change_password status:', e);
+    }
+  }
 
   const handleLogout = async () => {
     'use server';
@@ -30,7 +44,7 @@ export default async function StaffLayout({ children }) {
   return (
     <div className="flex min-h-screen bg-zinc-50 text-zinc-950">
       {/* First Time Password Change Modal */}
-      <FirstTimePasswordModal mustChangePassword={!!sessionWithPermissions?.must_change_password} />
+      <FirstTimePasswordModal mustChangePassword={mustChangePassword} />
 
       {/* Staff Sidebar Left Navigation */}
       <StaffSidebar session={sessionWithPermissions} handleLogoutAction={handleLogout} />

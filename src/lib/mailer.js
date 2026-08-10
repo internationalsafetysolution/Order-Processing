@@ -21,16 +21,16 @@ export async function sendSystemEmail(templateKey, templateParams) {
     }
     const settings = settingsRows[0];
 
-    const host = settings.smtp_host;
-    const port = parseInt(settings.smtp_port) || 25;
-    const user = settings.smtp_user;
-    const pass = settings.smtp_pass;
-    const secure = settings.smtp_secure || 'none';
-    const senderEmail = settings.smtp_sender_email;
-    const senderName = settings.smtp_sender_name || 'ISS Portal';
+    const host = settings.smtp_host || process.env.SMTP_HOST || '';
+    const port = parseInt(settings.smtp_port || process.env.SMTP_PORT) || 587;
+    const user = settings.smtp_user || process.env.SMTP_USER || '';
+    const pass = settings.smtp_pass || process.env.SMTP_PASS || '';
+    const secure = settings.smtp_secure || process.env.SMTP_SECURE || 'tls';
+    const senderEmail = settings.smtp_sender_email || process.env.SMTP_SENDER_EMAIL || user;
+    const senderName = settings.smtp_sender_name || process.env.SMTP_SENDER_NAME || 'ISS Portal';
 
     if (!host || !senderEmail) {
-      console.log('Mailer: SMTP host or sender email not configured in Settings.');
+      console.log('Mailer: SMTP host or sender email not configured in Settings or Env.');
       return;
     }
 
@@ -53,6 +53,11 @@ export async function sendSystemEmail(templateKey, templateParams) {
 
     // 4. Determine recipients based on database notify flags
     const recipients = [];
+
+    // direct_recipient check (for targeted registration/reset emails)
+    if (templateParams.direct_recipient) {
+      recipients.push(templateParams.direct_recipient);
+    }
 
     // notify_admin check
     if (template.notify_admin) {

@@ -66,7 +66,7 @@ export async function getUserPermissions(user) {
   let dbUser = null;
   try {
     if (process.env.DB_HOST) {
-      const users = await query('SELECT designation, permission_scopes FROM users WHERE id = ?', [user.id]);
+      const users = await query('SELECT designation, permission_scopes, must_change_password FROM users WHERE id = ?', [user.id]);
       if (users.length > 0) dbUser = users[0];
     } else {
       const users = await query('SELECT * FROM users');

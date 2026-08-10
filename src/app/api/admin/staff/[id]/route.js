@@ -37,10 +37,11 @@ export async function PUT(request, context) {
     }
 
     if (password && password.trim() !== '') {
-      // Update with new password
+      // Update with new password and force password change on next login for staff
+      const mustChange = userRole === 'STAFF' ? 1 : 0;
       await query(
-        'UPDATE users SET name = ?, email = ?, password = ?, role = ?, designation = ?, permission_scopes = ? WHERE id = ?',
-        [name, email, password, userRole, userDesignation, permissionScopes || null, staffId]
+        'UPDATE users SET name = ?, email = ?, password = ?, role = ?, designation = ?, permission_scopes = ?, must_change_password = ? WHERE id = ?',
+        [name, email, password, userRole, userDesignation, permissionScopes || null, mustChange, staffId]
       );
     } else {
       // Update without changing password
@@ -78,12 +79,33 @@ export async function DELETE(request, context) {
   const { id } = await context.params;
   const staffId = parseInt(id);
 
+  if (session.id === staffId) {
+    return Response.json({ error: 'You cannot delete your own active administrator account' }, { status: 400 });
+  }
+
   try {
-    // Delete staff
+    // 1. Allow NULL for assigned staff columns in orders if MySQL
+    try {
+      await query('ALTER TABLE orders MODIFY COLUMN assigned_staff_1_id INT NULL');
+      await query('ALTER TABLE orders MODIFY COLUMN assigned_staff_2_id INT NULL');
+      await query('ALTER TABLE orders MODIFY COLUMN assigned_staff_3_id INT NULL');
+    } catch (e) {}
+
+    // 2. Unassign staff from any active orders so foreign keys/references don't block deletion
+    try {
+      await query('UPDATE orders SET assigned_staff_1_id = NULL WHERE assigned_staff_1_id = ?', [staffId]);
+      await query('UPDATE orders SET assigned_staff_2_id = NULL WHERE assigned_staff_2_id = ?', [staffId]);
+      await query('UPDATE orders SET assigned_staff_3_id = NULL WHERE assigned_staff_3_id = ?', [staffId]);
+      await query('UPDATE orders SET created_by_id = NULL WHERE created_by_id = ?', [staffId]);
+    } catch (e) {
+      console.warn('Failed to unassign orders during staff delete:', e);
+    }
+
+    // 3. Delete staff member
     await query('DELETE FROM users WHERE id = ?', [staffId]);
     return Response.json({ success: true, message: 'Staff member deleted successfully' });
   } catch (error) {
     console.error('Delete staff API error:', error);
-    return Response.json({ error: 'Failed to delete staff member' }, { status: 500 });
+    return Response.json({ error: error.message || 'Failed to delete staff member' }, { status: 500 });
   }
 }

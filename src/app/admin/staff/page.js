@@ -67,7 +67,7 @@ export default function StaffManagement() {
     setEditingId(null);
     setName('');
     setEmail('');
-    setPassword('');
+    setPassword('12345678');
     setRole('STAFF');
     setDesignation('TASK_COMPLETION');
     setSelectedScopes([]);

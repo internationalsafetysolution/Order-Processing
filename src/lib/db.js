@@ -295,11 +295,11 @@ function handleMockQuery(sql, params) {
   // SELECT * FROM users
   if (sqlNormalized.startsWith('select') && sqlNormalized.includes('from users')) {
     let list = db.users;
-    if (sqlNormalized.includes('where email = ?') && sqlNormalized.includes('id != ?')) {
+    if (sqlNormalized.includes('email = ?') && sqlNormalized.includes('id != ?')) {
       const email = params[0];
       const excludeId = parseInt(params[1]);
       list = list.filter(u => u.email.trim().toLowerCase() === email.trim().toLowerCase() && u.id !== excludeId);
-    } else if (sqlNormalized.includes('where email = ?')) {
+    } else if (sqlNormalized.includes('email = ?')) {
       const email = params[0];
       list = list.filter(u => u.email.trim().toLowerCase() === email.trim().toLowerCase());
     } else if (sqlNormalized.includes('where designation = ?')) {
@@ -637,6 +637,18 @@ function handleMockQuery(sql, params) {
     const originalLength = db.permission_scopes.length;
     db.permission_scopes = db.permission_scopes.filter(s => s.id !== scopeId);
     if (db.permission_scopes.length < originalLength) {
+      writeMockDb(db);
+      return { affectedRows: 1 };
+    }
+    return { affectedRows: 0 };
+  }
+
+  // DELETE FROM users
+  if (sqlNormalized.startsWith('delete from users')) {
+    const userId = parseInt(params[0], 10);
+    const originalLength = db.users.length;
+    db.users = db.users.filter(u => parseInt(u.id, 10) !== userId);
+    if (db.users.length < originalLength) {
       writeMockDb(db);
       return { affectedRows: 1 };
     }
