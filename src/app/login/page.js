@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { KeyRound, Mail, AlertCircle, Building2, UserCheck, Receipt, Truck } from 'lucide-react';
+import { KeyRound, Mail, AlertCircle, Building2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -160,43 +160,6 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
-
-        {/* Demo Fast Login Shortcuts */}
-        <div className="pt-6 border-t border-zinc-200">
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">
-            Quick Credentials (for testing)
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              onClick={() => autofill('admin@company.com', 'password123')}
-              className="flex items-center gap-1.5 p-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded transition-colors text-left font-semibold cursor-pointer"
-            >
-              <Building2 className="h-3.5 w-3.5 text-brand-orange shrink-0" />
-              <span>Admin</span>
-            </button>
-            <button
-              onClick={() => autofill('task@company.com', 'password123')}
-              className="flex items-center gap-1.5 p-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded transition-colors text-left font-semibold cursor-pointer"
-            >
-              <UserCheck className="h-3.5 w-3.5 text-orange-650 shrink-0" />
-              <span>Staff (Task DC)</span>
-            </button>
-            <button
-              onClick={() => autofill('invoice@company.com', 'password123')}
-              className="flex items-center gap-1.5 p-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded transition-colors text-left font-semibold cursor-pointer"
-            >
-              <Receipt className="h-3.5 w-3.5 text-brand-green shrink-0" />
-              <span>Staff (Invoice)</span>
-            </button>
-            <button
-              onClick={() => autofill('courier@company.com', 'password123')}
-              className="flex items-center gap-1.5 p-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded transition-colors text-left font-semibold cursor-pointer"
-            >
-              <Truck className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-              <span>Staff (Courier)</span>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

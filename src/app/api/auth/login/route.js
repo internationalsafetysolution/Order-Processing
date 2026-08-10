@@ -12,7 +12,16 @@ export async function POST(request) {
       );
     }
 
-    const users = await query('SELECT * FROM users WHERE email = ?', [email]);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    let users = await query('SELECT * FROM users WHERE LOWER(email) = ?', [cleanEmail]);
+    if (!users || users.length === 0) {
+      const allUsers = await query('SELECT * FROM users');
+      if (Array.isArray(allUsers)) {
+        users = allUsers.filter(u => u.email && u.email.trim().toLowerCase() === cleanEmail);
+      }
+    }
     
     if (!users || users.length === 0) {
       return Response.json(
@@ -23,8 +32,8 @@ export async function POST(request) {
 
     const user = users[0];
 
-    // For production, use password hashing (e.g. bcrypt). Here we compare directly
-    if (user.password !== password) {
+    // Password comparison
+    if (user.password !== cleanPassword) {
       return Response.json(
         { error: 'Invalid email or password' },
         { status: 401 }

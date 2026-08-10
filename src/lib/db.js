@@ -9,41 +9,14 @@ const initialMockData = {
   users: [
     {
       id: 1,
-      email: 'admin@company.com',
-      password: 'password123',
+      email: 'internationalsafetysolution@gmail.com',
+      password: 'Admin@1236#',
       name: 'Admin User',
       role: 'ADMIN',
       designation: null
-    },
-    {
-      id: 2,
-      email: 'task@company.com',
-      password: 'password123',
-      name: 'Zahid Khan (Task)',
-      role: 'STAFF',
-      designation: 'TASK_COMPLETION'
-    },
-    {
-      id: 3,
-      email: 'invoice@company.com',
-      password: 'password123',
-      name: 'Maria Ali (Accounts)',
-      role: 'STAFF',
-      designation: 'INVOICE_CREATION'
-    },
-    {
-      id: 4,
-      email: 'courier@company.com',
-      password: 'password123',
-      name: 'Sajid Ahmed (Logistics)',
-      role: 'STAFF',
-      designation: 'INVOICE_COURIER'
     }
   ],
-  clients: [
-    { id: 1, name: 'Siddique Traders', email: 'siddique@trade.com', phone: '0300-1234567', address: 'Lahore, Pakistan' },
-    { id: 2, name: 'Apex Industries', email: 'info@apex.com', phone: '0321-7654321', address: 'Karachi, Pakistan' }
-  ],
+  clients: [],
   order_types: [
     { id: 1, name: 'Refilling Service' },
     { id: 2, name: 'Installation Project' },

@@ -210,35 +210,16 @@ export async function seedDatabase() {
       console.error('Failed to run retroactive updates:', e.message);
     }
 
-    // Seed default admin and staff if not exist
+    // Seed default admin if not exist
     const users = await query('SELECT COUNT(*) as count FROM users');
     if (users[0] && users[0].count === 0) {
-      console.log('Database empty, seeding default accounts...');
+      console.log('Database empty, seeding default admin account...');
       
-      // Admin
+      // Default Admin
       await query(
         'INSERT INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
-        ['admin@company.com', 'password123', 'Admin User', 'ADMIN', null]
+        ['internationalsafetysolution@gmail.com', 'Admin@1236#', 'Admin User', 'ADMIN', null]
       );
-      
-      // Staff 1 (Task Completion)
-      await query(
-        'INSERT INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
-        ['task@company.com', 'password123', 'Zahid Khan (Task)', 'STAFF', 'TASK_COMPLETION']
-      );
-
-      // Staff 2 (Invoice Creation)
-      await query(
-        'INSERT INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
-        ['invoice@company.com', 'password123', 'Maria Ali (Accounts)', 'STAFF', 'INVOICE_CREATION']
-      );
-
-      // Staff 3 (Courier Dispatch)
-      await query(
-        'INSERT INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
-        ['courier@company.com', 'password123', 'Sajid Ahmed (Logistics)', 'STAFF', 'INVOICE_COURIER']
-      );
-
       // Seed mock clients
       await query(
         'INSERT INTO clients (name, email, phone, address) VALUES (?, ?, ?, ?)',
