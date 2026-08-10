@@ -148,7 +148,7 @@ async function ensureDatabaseAndPool() {
       const [rows] = await pool.execute('SELECT COUNT(*) as count FROM settings');
       if (rows[0].count === 0) {
         await pool.execute(
-          'INSERT INTO settings (id, app_name, app_logo, favicon, logo_width, reupload_buffer_time, max_reupload_count) VALUES (1, ?, NULL, NULL, 150, 20, 3)',
+          'INSERT IGNORE INTO settings (id, app_name, app_logo, favicon, logo_width, reupload_buffer_time, max_reupload_count) VALUES (1, ?, NULL, NULL, 150, 20, 3)',
           ['ISS PORTAL']
         );
       }
