@@ -137,7 +137,10 @@ export default function StaffManagement() {
       setTimeout(() => {
         setShowFormModal(false);
         setMessage({ text: '', type: '' });
-      }, 1500);
+        if (isEditMode) {
+          window.location.reload();
+        }
+      }, 1200);
 
     } catch (err) {
       setMessage({ text: err.message, type: 'error' });

@@ -1,5 +1,5 @@
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/auth';
+import { getSession, setSession } from '@/lib/auth';
 
 export async function PUT(request, context) {
   const session = await getSession();
@@ -48,6 +48,18 @@ export async function PUT(request, context) {
         'UPDATE users SET name = ?, email = ?, role = ?, designation = ?, permission_scopes = ? WHERE id = ?',
         [name, email, userRole, userDesignation, permissionScopes || null, staffId]
       );
+    }
+
+    // If updating own logged-in account, refresh active session cookie instantly
+    if (session && session.id === staffId) {
+      await setSession({
+        ...session,
+        name,
+        email,
+        role: userRole,
+        designation: userDesignation,
+        permission_scopes: permissionScopes || null
+      });
     }
 
     return Response.json({ success: true, message: 'User account updated successfully' });
