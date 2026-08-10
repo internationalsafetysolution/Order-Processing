@@ -82,8 +82,13 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8 bg-white border border-zinc-200 p-8 rounded-2xl shadow-xl relative z-10">
         <div>
           {settings.app_logo ? (
-            <div className="mx-auto h-16 w-32 flex items-center justify-center overflow-hidden">
-              <img src={settings.app_logo} alt="App Logo" className="max-h-full max-w-full object-contain" />
+            <div className="mx-auto flex items-center justify-center overflow-hidden p-2" style={{ maxHeight: '100px', maxWidth: '260px' }}>
+              <img
+                src={settings.app_logo}
+                alt="App Logo"
+                style={{ maxHeight: '80px', maxWidth: '100%', width: 'auto', height: 'auto', objectFit: 'contain' }}
+                className="max-h-20 max-w-full w-auto h-auto object-contain mx-auto"
+              />
             </div>
           ) : (
             <div className="mx-auto h-12 w-12 rounded-xl bg-gradient-to-tr from-brand-orange to-amber-500 flex items-center justify-center shadow-md">
