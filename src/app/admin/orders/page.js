@@ -606,7 +606,7 @@ export default function ClientOrders() {
       </div>
 
       {/* Orders Filter & Table */}
-      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-zinc-200 rounded-xl shadow-sm">
         {/* Search header bar */}
         <div className="p-4 lg:p-6 border-b border-zinc-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-zinc-50/50">
           <h2 className="text-base lg:text-lg font-bold text-brand-black font-sans">Orders Registry</h2>
@@ -712,6 +712,10 @@ export default function ClientOrders() {
                       <Eye className="h-3.5 w-3.5 shrink-0" />
                       <span>Track Flow</span>
                     </button>
+                    <OrderDocumentDropdown 
+                      order={order} 
+                      onPreviewImage={(url) => setPreviewImageUrl(url)} 
+                    />
                     {canEdit && (
                       <button
                         onClick={() => handleOpenEditModal(order)}

@@ -6,6 +6,7 @@ import { getSafeFileUrl } from '@/lib/fileUtils';
 
 export default function OrderDocumentDropdown({ order, onPreviewImage }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [positionClass, setPositionClass] = useState('bottom-full mb-1.5 right-0');
   const dropdownRef = useRef(null);
 
   // Close dropdown on outside click
@@ -18,6 +19,21 @@ export default function OrderDocumentDropdown({ order, onPreviewImage }) {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const toggleDropdown = (e) => {
+    e.stopPropagation();
+    if (!isOpen && dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // If less than 220px below button, pop UPWARDS so it never clips under table card
+      if (spaceBelow < 220) {
+        setPositionClass('bottom-full mb-1.5 right-0');
+      } else {
+        setPositionClass('top-full mt-1.5 right-0');
+      }
+    }
+    setIsOpen(!isOpen);
+  };
 
   const poPaths = order?.po_file_path ? order.po_file_path.split(',').filter(Boolean) : [];
   const dcPaths = order?.dc_image_path ? order.dc_image_path.split(',').filter(Boolean) : [];
@@ -41,15 +57,12 @@ export default function OrderDocumentDropdown({ order, onPreviewImage }) {
     <div className="relative inline-block text-left" ref={dropdownRef}>
       <button
         type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
-        title="Download / View Order Documents"
-        className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
+        onClick={toggleDropdown}
+        title="Download Order Documents"
+        className={`p-1.5 border rounded-lg transition-all cursor-pointer inline-flex items-center justify-center ${
           isOpen
             ? 'border-brand-orange bg-orange-50 text-brand-orange shadow-xs'
-            : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-brand-orange'
+            : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-brand-orange hover:border-brand-orange'
         }`}
       >
         <Download className="h-3.5 w-3.5 shrink-0" />
@@ -58,7 +71,7 @@ export default function OrderDocumentDropdown({ order, onPreviewImage }) {
       {isOpen && (
         <div 
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 mt-1.5 w-60 rounded-xl bg-white border border-zinc-200 shadow-xl z-50 p-2 text-xs animate-fade-in font-sans"
+          className={`absolute ${positionClass} w-60 rounded-xl bg-white border border-zinc-200 shadow-2xl z-[100] p-2 text-xs font-sans animate-fade-in`}
         >
           <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 mb-1.5">
             Download Order Files
