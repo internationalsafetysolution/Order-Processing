@@ -191,8 +191,107 @@ async function ensureDatabaseAndPool() {
       } catch (e) {}
 
       console.log('MySQL email_templates table verified/created.');
+
+      // Auto-create users table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          email VARCHAR(255) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          role VARCHAR(50) NOT NULL,
+          designation VARCHAR(100) NULL,
+          permission_scopes TEXT NULL,
+          must_change_password TINYINT NOT NULL DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      try {
+        await pool.execute('ALTER TABLE users ADD COLUMN must_change_password TINYINT NOT NULL DEFAULT 0');
+      } catch (e) {}
+      try {
+        await pool.execute('ALTER TABLE users ADD COLUMN permission_scopes TEXT NULL');
+      } catch (e) {}
+
+      // Auto-create clients table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS clients (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          phone VARCHAR(100) NOT NULL,
+          address TEXT NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Auto-create order_types table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS order_types (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(255) NOT NULL UNIQUE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Auto-create orders table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS orders (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          client_id INT NOT NULL,
+          order_type_id INT NULL,
+          details TEXT NOT NULL,
+          qty INT NULL,
+          deadline_date VARCHAR(100) NULL,
+          status VARCHAR(100) NOT NULL,
+          assigned_staff_1_id INT NULL,
+          assigned_staff_2_id INT NULL,
+          assigned_staff_3_id INT NULL,
+          dc_image_path TEXT NULL,
+          received_by VARCHAR(255) NULL,
+          invoice_image_path TEXT NULL,
+          tracking_id VARCHAR(255) NULL,
+          po_no VARCHAR(255) NULL,
+          po_file_path TEXT NULL,
+          stage1_completed_at DATETIME NULL,
+          stage2_completed_at DATETIME NULL,
+          stage3_completed_at DATETIME NULL,
+          stage1_edit_count INT DEFAULT 0,
+          stage2_edit_count INT DEFAULT 0,
+          stage3_edit_count INT DEFAULT 0,
+          stage1_opened_at DATETIME NULL,
+          stage2_opened_at DATETIME NULL,
+          stage3_opened_at DATETIME NULL,
+          stage1_reupload_times TEXT NULL,
+          stage2_reupload_times TEXT NULL,
+          stage3_reupload_times TEXT NULL,
+          created_by_id INT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Auto-create permission_scopes table
+      await pool.execute(`
+        CREATE TABLE IF NOT EXISTS permission_scopes (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          scope_name VARCHAR(100) NOT NULL,
+          staff_id INT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      `);
+
+      // Auto-seed default Admin user if users table is empty
+      const [userRows] = await pool.execute('SELECT COUNT(*) as count FROM users');
+      if (userRows[0].count === 0) {
+        await pool.execute(
+          'INSERT IGNORE INTO users (email, password, name, role, designation) VALUES (?, ?, ?, ?, ?)',
+          ['internationalsafetysolution@gmail.com', 'Admin@1236#', 'System Administrator', 'ADMIN', null]
+        );
+        console.log('Default System Administrator account auto-seeded into MySQL users table.');
+      }
+
+      console.log('MySQL all tables (users, clients, orders, order_types, permission_scopes) verified/created.');
     } catch (e) {
-      console.error('Failed to auto-create settings table:', e.message);
+      console.error('Failed to auto-create database tables:', e.message);
     }
 
     return pool;
