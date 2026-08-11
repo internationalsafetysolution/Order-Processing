@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserSquare2, UserPlus, Phone, Mail, MapPin, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2, ShieldAlert } from 'lucide-react';
+import { UserSquare2, UserPlus, Phone, Mail, MapPin, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2, ShieldAlert, List, LayoutGrid, Search } from 'lucide-react';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function ClientManagement() {
@@ -9,6 +9,10 @@ export default function ClientManagement() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   
+  // View mode & search states
+  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Form modal toggles & state
   const [showFormModal, setShowFormModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -62,6 +66,18 @@ export default function ClientManagement() {
   const canEdit = isAdmin || !!user?.permissions?.client_management?.edit;
   const canDelete = isAdmin || !!user?.permissions?.client_management?.delete;
 
+  const filteredClients = clients.filter((client) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase().trim();
+    return (
+      client.name?.toLowerCase().includes(q) ||
+      client.email?.toLowerCase().includes(q) ||
+      client.phone?.toLowerCase().includes(q) ||
+      client.address?.toLowerCase().includes(q) ||
+      `#${client.id}`.includes(q)
+    );
+  });
+
   const openAddModal = () => {
     setIsEditMode(false);
     setEditingId(null);
@@ -77,9 +93,9 @@ export default function ClientManagement() {
     setIsEditMode(true);
     setEditingId(client.id);
     setName(client.name);
-    setEmail(client.email);
-    setPhone(client.phone);
-    setAddress(client.address);
+    setEmail(client.email || '');
+    setPhone(client.phone || '');
+    setAddress(client.address || '');
     setMessage({ text: '', type: '' });
     setShowFormModal(true);
   };
@@ -164,17 +180,18 @@ export default function ClientManagement() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Title Header */}
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold text-brand-black tracking-tight font-sans">Client Registry</h1>
           <p className="text-zinc-500 text-sm mt-1">Manage corporate client databases to quick-select during order creations.</p>
         </div>
+        
         {canCreate && (
           <button
             onClick={openAddModal}
-            className="flex items-center gap-2 px-4 py-2 bg-brand-orange hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shadow-md cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2 bg-brand-orange hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors shadow-md cursor-pointer shrink-0"
           >
             <UserPlus className="h-4 w-4" />
             <span>Add New Client</span>
@@ -182,21 +199,168 @@ export default function ClientManagement() {
         )}
       </div>
 
-      {/* Clients Listing Grid */}
+      {/* Toolbar: Search and View Mode Switcher */}
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 bg-white p-3 border border-zinc-200 rounded-xl shadow-xs">
+        {/* Search Bar */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search clients by name, email, phone, address or ID..."
+            className="w-full pl-9 pr-3 py-1.5 border border-zinc-200 rounded-lg text-sm bg-zinc-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-orange focus:border-brand-orange transition-all"
+          />
+        </div>
+
+        {/* Layout Toggle Buttons */}
+        <div className="flex items-center gap-1.5 self-end sm:self-auto bg-zinc-100 p-1 rounded-lg border border-zinc-200">
+          <button
+            onClick={() => setViewMode('list')}
+            title="List View"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'list'
+                ? 'bg-white text-zinc-950 shadow-xs border border-zinc-200'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <List className="h-3.5 w-3.5" />
+            <span>List View</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('grid')}
+            title="Grid View"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+              viewMode === 'grid'
+                ? 'bg-white text-zinc-950 shadow-xs border border-zinc-200'
+                : 'text-zinc-500 hover:text-zinc-800'
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+            <span>Grid View</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Content Rendering */}
       {loading ? (
         <div className="bg-white border border-zinc-200 rounded-xl p-12 text-center text-zinc-500 shadow-sm">
           <RefreshCw className="h-8 w-8 animate-spin mx-auto text-brand-orange mb-3" />
           <p className="text-sm">Loading clients directory...</p>
         </div>
-      ) : clients.length === 0 ? (
+      ) : filteredClients.length === 0 ? (
         <div className="bg-white border border-zinc-200 rounded-xl p-12 text-center text-zinc-400 shadow-sm">
           <UserSquare2 className="h-12 w-12 text-zinc-300 mx-auto mb-3" />
-          <p className="text-sm font-semibold">No clients registered yet.</p>
-          <p className="text-xs mt-1">Add clients to begin dispatching orders.</p>
+          <p className="text-sm font-semibold">
+            {searchQuery ? 'No matching clients found.' : 'No clients registered yet.'}
+          </p>
+          <p className="text-xs mt-1">
+            {searchQuery ? 'Try clearing or modifying your search query.' : 'Add clients to begin dispatching orders.'}
+          </p>
+        </div>
+      ) : viewMode === 'list' ? (
+        /* LIST VIEW TABLE */
+        <div className="bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr className="bg-zinc-50/90 border-b border-zinc-200 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                  <th className="py-3 px-4 w-20">ID</th>
+                  <th className="py-3 px-4">Client Name</th>
+                  <th className="py-3 px-4">Contact Phone</th>
+                  <th className="py-3 px-4">Email Address</th>
+                  <th className="py-3 px-4">Delivery / Billing Address</th>
+                  {(canEdit || canDelete) && (
+                    <th className="py-3 px-4 text-right w-24">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-200">
+                {filteredClients.map((client) => (
+                  <tr key={client.id} className="hover:bg-zinc-50/70 transition-colors">
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">
+                        #{client.id}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-4 font-bold text-zinc-950 whitespace-nowrap">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-lg bg-zinc-950 flex items-center justify-center text-white shrink-0 shadow-xs">
+                          <UserSquare2 className="h-4 w-4" />
+                        </div>
+                        <span className="font-bold text-zinc-900">{client.name}</span>
+                      </div>
+                    </td>
+
+                    <td className="py-3 px-4 text-zinc-600 whitespace-nowrap">
+                      {client.phone ? (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+                          <span>{client.phone}</span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-300">—</span>
+                      )}
+                    </td>
+
+                    <td className="py-3 px-4 text-zinc-600 whitespace-nowrap">
+                      {client.email ? (
+                        <div className="flex items-center gap-1.5">
+                          <Mail className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+                          <span>{client.email}</span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-300">—</span>
+                      )}
+                    </td>
+
+                    <td className="py-3 px-4 text-zinc-600 max-w-sm truncate">
+                      {client.address ? (
+                        <div className="flex items-start gap-1.5">
+                          <MapPin className="h-3.5 w-3.5 text-brand-orange shrink-0 mt-0.5" />
+                          <span className="truncate text-xs" title={client.address}>{client.address}</span>
+                        </div>
+                      ) : (
+                        <span className="text-zinc-300">—</span>
+                      )}
+                    </td>
+
+                    {(canEdit || canDelete) && (
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canEdit && (
+                            <button
+                              onClick={() => openEditModal(client)}
+                              title="Edit Client"
+                              className="p-1.5 text-zinc-600 hover:text-brand-orange hover:bg-orange-50 border border-zinc-200 hover:border-brand-orange rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeleteClient(client.id, client.name)}
+                              title="Delete Client"
+                              className="p-1.5 text-zinc-600 hover:text-red-600 hover:bg-red-50 border border-zinc-200 hover:border-red-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
+        /* GRID VIEW CARDS */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clients.map((client) => (
+          {filteredClients.map((client) => (
             <div key={client.id} className="bg-white border border-zinc-200 hover:border-brand-orange/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[220px]">
               
               <div className="space-y-4">
@@ -216,15 +380,15 @@ export default function ClientManagement() {
                 <div className="space-y-2 text-xs text-zinc-600 border-t border-zinc-100 pt-3">
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-brand-orange shrink-0" />
-                    <span>{client.phone}</span>
+                    <span>{client.phone || '—'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-brand-orange shrink-0" />
-                    <span className="truncate">{client.email}</span>
+                    <span className="truncate">{client.email || '—'}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-brand-orange shrink-0 mt-0.5" />
-                    <span className="leading-relaxed">{client.address}</span>
+                    <span className="leading-relaxed">{client.address || '—'}</span>
                   </div>
                 </div>
               </div>
