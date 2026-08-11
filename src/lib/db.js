@@ -273,11 +273,18 @@ async function ensureDatabaseAndPool() {
       await pool.execute(`
         CREATE TABLE IF NOT EXISTS permission_scopes (
           id INT AUTO_INCREMENT PRIMARY KEY,
-          scope_name VARCHAR(100) NOT NULL,
-          staff_id INT NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          permissions LONGTEXT NOT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+
+      try {
+        await pool.execute('ALTER TABLE permission_scopes ADD COLUMN name VARCHAR(255) NULL');
+      } catch (e) {}
+      try {
+        await pool.execute('ALTER TABLE permission_scopes ADD COLUMN permissions LONGTEXT NULL');
+      } catch (e) {}
 
       // Auto-seed default Admin user if users table is empty
       const [userRows] = await pool.execute('SELECT COUNT(*) as count FROM users');
