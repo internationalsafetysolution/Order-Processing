@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { UserSquare2, UserPlus, Phone, Mail, MapPin, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2, ShieldAlert, List, LayoutGrid, Search } from 'lucide-react';
+import { UserSquare2, UserPlus, Phone, Mail, MapPin, CheckCircle2, AlertCircle, RefreshCw, Pencil, Trash2, ShieldAlert, List, LayoutGrid, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function ClientManagement() {
@@ -12,6 +12,10 @@ export default function ClientManagement() {
   // View mode & search states
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grid'
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Sorting states
+  const [sortField, setSortField] = useState('name'); // 'id' or 'name'
+  const [sortDirection, setSortDirection] = useState('asc'); // 'asc' or 'desc'
 
   // Form modal toggles & state
   const [showFormModal, setShowFormModal] = useState(false);
@@ -66,17 +70,41 @@ export default function ClientManagement() {
   const canEdit = isAdmin || !!user?.permissions?.client_management?.edit;
   const canDelete = isAdmin || !!user?.permissions?.client_management?.delete;
 
-  const filteredClients = clients.filter((client) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase().trim();
-    return (
-      client.name?.toLowerCase().includes(q) ||
-      client.email?.toLowerCase().includes(q) ||
-      client.phone?.toLowerCase().includes(q) ||
-      client.address?.toLowerCase().includes(q) ||
-      `#${client.id}`.includes(q)
-    );
-  });
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const processedClients = clients
+    .filter((client) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      return (
+        client.name?.toLowerCase().includes(q) ||
+        client.email?.toLowerCase().includes(q) ||
+        client.phone?.toLowerCase().includes(q) ||
+        client.address?.toLowerCase().includes(q) ||
+        `#${client.id}`.includes(q)
+      );
+    })
+    .sort((a, b) => {
+      if (sortField === 'id') {
+        const idA = Number(a.id) || 0;
+        const idB = Number(b.id) || 0;
+        return sortDirection === 'asc' ? idA - idB : idB - idA;
+      } else if (sortField === 'name') {
+        const nameA = (a.name || '').toLowerCase();
+        const nameB = (b.name || '').toLowerCase();
+        if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
+        if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      }
+      return 0;
+    });
 
   const openAddModal = () => {
     setIsEditMode(false);
@@ -249,7 +277,7 @@ export default function ClientManagement() {
           <RefreshCw className="h-8 w-8 animate-spin mx-auto text-brand-orange mb-3" />
           <p className="text-sm">Loading clients directory...</p>
         </div>
-      ) : filteredClients.length === 0 ? (
+      ) : processedClients.length === 0 ? (
         <div className="bg-white border border-zinc-200 rounded-xl p-12 text-center text-zinc-400 shadow-sm">
           <UserSquare2 className="h-12 w-12 text-zinc-300 mx-auto mb-3" />
           <p className="text-sm font-semibold">
@@ -266,8 +294,46 @@ export default function ClientManagement() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-50/90 border-b border-zinc-200 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
-                  <th className="py-3 px-4 w-20">ID</th>
-                  <th className="py-3 px-4">Client Name</th>
+                  {/* ID Sortable Header */}
+                  <th 
+                    onClick={() => handleSort('id')} 
+                    title="Click to sort by ID"
+                    className="py-3 px-4 w-28 cursor-pointer select-none hover:bg-zinc-100/90 transition-colors group"
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-700">
+                      <span>ID</span>
+                      {sortField === 'id' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-brand-orange" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-brand-orange" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-600" />
+                      )}
+                    </div>
+                  </th>
+
+                  {/* Client Name Sortable Header (A-Z) */}
+                  <th 
+                    onClick={() => handleSort('name')} 
+                    title="Click to sort by Client Name (A-Z)"
+                    className="py-3 px-4 cursor-pointer select-none hover:bg-zinc-100/90 transition-colors group"
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-zinc-700">
+                      <span>Client Name</span>
+                      {sortField === 'name' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp className="h-3.5 w-3.5 text-brand-orange" />
+                        ) : (
+                          <ArrowDown className="h-3.5 w-3.5 text-brand-orange" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 text-zinc-400 group-hover:text-zinc-600" />
+                      )}
+                    </div>
+                  </th>
+
                   <th className="py-3 px-4">Contact Phone</th>
                   <th className="py-3 px-4">Email Address</th>
                   <th className="py-3 px-4">Delivery / Billing Address</th>
@@ -277,7 +343,7 @@ export default function ClientManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200">
-                {filteredClients.map((client) => (
+                {processedClients.map((client) => (
                   <tr key={client.id} className="hover:bg-zinc-50/70 transition-colors">
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">
@@ -360,7 +426,7 @@ export default function ClientManagement() {
       ) : (
         /* GRID VIEW CARDS */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClients.map((client) => (
+          {processedClients.map((client) => (
             <div key={client.id} className="bg-white border border-zinc-200 hover:border-brand-orange/50 rounded-xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between min-h-[220px]">
               
               <div className="space-y-4">
