@@ -1,39 +1,76 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, FileText, Truck, Receipt } from 'lucide-react';
 import { getSafeFileUrl } from '@/lib/fileUtils';
 
 export default function OrderDocumentDropdown({ order, onPreviewImage }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [positionClass, setPositionClass] = useState('bottom-full mb-1.5 right-0');
+  const [coords, setCoords] = useState({ top: 0, left: 0, openUpwards: false });
+  const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    setMounted(true);
   }, []);
+
+  // Calculate portal position based on trigger button bounding rect
+  const updatePosition = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openUpwards = spaceBelow < 220;
+
+      const dropdownWidth = 128; // 128px (w-32) width
+      let calculatedLeft = rect.right + window.scrollX - dropdownWidth;
+      if (calculatedLeft < 10) calculatedLeft = 10;
+
+      setCoords({
+        top: openUpwards ? rect.top + window.scrollY - 8 : rect.bottom + window.scrollY + 6,
+        left: calculatedLeft,
+        openUpwards
+      });
+    }
+  };
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
-    if (!isOpen && dropdownRef.current) {
-      const rect = dropdownRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
-      // If less than 220px below button, pop UPWARDS so it never clips under table card
-      if (spaceBelow < 220) {
-        setPositionClass('bottom-full mb-1.5 right-0');
-      } else {
-        setPositionClass('top-full mt-1.5 right-0');
-      }
+    if (!isOpen) {
+      updatePosition();
     }
     setIsOpen(!isOpen);
   };
+
+  // Close dropdown on outside click or scroll/resize
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        buttonRef.current && !buttonRef.current.contains(event.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleScrollOrResize() {
+      if (isOpen) {
+        updatePosition();
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScrollOrResize, true);
+      window.addEventListener('resize', handleScrollOrResize);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+    };
+  }, [isOpen]);
 
   const poPaths = order?.po_file_path ? order.po_file_path.split(',').filter(Boolean) : [];
   const dcPaths = order?.dc_image_path ? order.dc_image_path.split(',').filter(Boolean) : [];
@@ -45,120 +82,112 @@ export default function OrderDocumentDropdown({ order, onPreviewImage }) {
 
   const handleOpenDoc = (path) => {
     const safeUrl = getSafeFileUrl(path);
-    if (!/\.pdf$/i.test(path) && onPreviewImage) {
-      onPreviewImage(safeUrl);
-    } else {
-      window.open(safeUrl, '_blank');
-    }
+    const link = document.createElement('a');
+    link.href = safeUrl;
+    const fileName = path.split('/').pop() || 'file';
+    link.setAttribute('download', fileName);
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     setIsOpen(false);
   };
 
+  const dropdownMenu = (
+    <div
+      ref={dropdownRef}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: 'absolute',
+        top: coords.openUpwards ? undefined : `${coords.top}px`,
+        bottom: coords.openUpwards ? `${window.innerHeight - (coords.top - window.scrollY)}px` : undefined,
+        left: `${coords.left}px`,
+      }}
+      className="w-32 rounded-xl bg-white border border-zinc-200 shadow-2xl z-[9999] p-1 text-xs font-sans animate-fade-in space-y-0.5"
+    >
+      {/* PO (Purchase Order) Section */}
+      <div>
+        {hasPo ? (
+          poPaths.map((path, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleOpenDoc(path)}
+              className="w-full flex items-center gap-1 px-2 py-1 rounded-md text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
+            >
+              <FileText className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+              <span className="truncate">PO File {poPaths.length > 1 ? `#${idx + 1}` : ''}</span>
+            </button>
+          ))
+        ) : (
+          <div className="w-full flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
+            <FileText className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span>PO File</span>
+          </div>
+        )}
+      </div>
+
+      {/* DC (Delivery Challan) Section */}
+      <div>
+        {hasDc ? (
+          dcPaths.map((path, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleOpenDoc(path)}
+              className="w-full flex items-center gap-1 px-2 py-1 rounded-md text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
+            >
+              <Truck className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+              <span className="truncate">DC File {dcPaths.length > 1 ? `#${idx + 1}` : ''}</span>
+            </button>
+          ))
+        ) : (
+          <div className="w-full flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
+            <Truck className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span>DC File</span>
+          </div>
+        )}
+      </div>
+
+      {/* Invoice Section */}
+      <div>
+        {hasInvoice ? (
+          invoicePaths.map((path, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleOpenDoc(path)}
+              className="w-full flex items-center gap-1 px-2 py-1 rounded-md text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
+            >
+              <Receipt className="h-3.5 w-3.5 text-brand-orange shrink-0" />
+              <span className="truncate">Invoice {invoicePaths.length > 1 ? `#${idx + 1}` : ''}</span>
+            </button>
+          ))
+        ) : (
+          <div className="w-full flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
+            <Receipt className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span>Invoice</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="inline-block text-left" ref={buttonRef}>
       <button
         type="button"
         onClick={toggleDropdown}
         title="Download Order Documents"
-        className={`p-1.5 border rounded-lg transition-all cursor-pointer inline-flex items-center justify-center ${
-          isOpen
+        className={`p-1.5 border rounded-lg transition-all cursor-pointer inline-flex items-center justify-center ${isOpen
             ? 'border-brand-orange bg-orange-50 text-brand-orange shadow-xs'
             : 'border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-brand-orange hover:border-brand-orange'
-        }`}
+          }`}
       >
         <Download className="h-3.5 w-3.5 shrink-0" />
       </button>
 
-      {isOpen && (
-        <div 
-          onClick={(e) => e.stopPropagation()}
-          className={`absolute ${positionClass} w-60 rounded-xl bg-white border border-zinc-200 shadow-2xl z-[100] p-2 text-xs font-sans animate-fade-in`}
-        >
-          <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-100 mb-1.5">
-            Download Order Files
-          </div>
-
-          {/* PO (Purchase Order) Section */}
-          <div className="space-y-1">
-            {hasPo ? (
-              poPaths.map((path, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleOpenDoc(path)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <FileText className="h-3.5 w-3.5 text-brand-orange shrink-0" />
-                    <span className="truncate">PO File {poPaths.length > 1 ? `#${idx + 1}` : ''}</span>
-                  </div>
-                  <Download className="h-3 w-3 text-zinc-400 shrink-0 ml-1" />
-                </button>
-              ))
-            ) : (
-              <div className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
-                <div className="flex items-center gap-2 truncate">
-                  <FileText className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span>PO File (Not Uploaded)</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* DC (Delivery Challan) Section */}
-          <div className="space-y-1 pt-1">
-            {hasDc ? (
-              dcPaths.map((path, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleOpenDoc(path)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <Truck className="h-3.5 w-3.5 text-brand-orange shrink-0" />
-                    <span className="truncate">DC File {dcPaths.length > 1 ? `#${idx + 1}` : ''}</span>
-                  </div>
-                  <Download className="h-3 w-3 text-zinc-400 shrink-0 ml-1" />
-                </button>
-              ))
-            ) : (
-              <div className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
-                <div className="flex items-center gap-2 truncate">
-                  <Truck className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span>DC File (Not Uploaded)</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Invoice Section */}
-          <div className="space-y-1 pt-1">
-            {hasInvoice ? (
-              invoicePaths.map((path, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleOpenDoc(path)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-zinc-800 hover:bg-orange-50 hover:text-brand-orange font-semibold transition-colors cursor-pointer border border-transparent hover:border-orange-200"
-                >
-                  <div className="flex items-center gap-2 truncate">
-                    <Receipt className="h-3.5 w-3.5 text-brand-orange shrink-0" />
-                    <span className="truncate">Invoice {invoicePaths.length > 1 ? `#${idx + 1}` : ''}</span>
-                  </div>
-                  <Download className="h-3 w-3 text-zinc-400 shrink-0 ml-1" />
-                </button>
-              ))
-            ) : (
-              <div className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-zinc-50 border border-zinc-100 text-zinc-400 opacity-60 cursor-not-allowed select-none">
-                <div className="flex items-center gap-2 truncate">
-                  <Receipt className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                  <span>Invoice (Not Uploaded)</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {isOpen && mounted && createPortal(dropdownMenu, document.body)}
     </div>
   );
 }
