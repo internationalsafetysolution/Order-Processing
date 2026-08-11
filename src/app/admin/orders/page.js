@@ -200,6 +200,42 @@ export default function ClientOrders() {
     setFormError('');
     setFormSuccess(false);
 
+    if (!clientId) {
+      setFormError('Please select a client.');
+      setFormLoading(false);
+      return;
+    }
+    if (!orderTypeId) {
+      setFormError('Please select an Order Type.');
+      setFormLoading(false);
+      return;
+    }
+    if (!poNo || !poNo.trim()) {
+      setFormError('Please enter the Purchase Order (PO) Number.');
+      setFormLoading(false);
+      return;
+    }
+    if (!poFiles || poFiles.length === 0) {
+      setFormError('Please attach at least one Purchase Order (PO) file.');
+      setFormLoading(false);
+      return;
+    }
+    if (!details || !details.trim()) {
+      setFormError('Please enter Order Requirements / Details.');
+      setFormLoading(false);
+      return;
+    }
+    if (!deadlineDate) {
+      setFormError('Please select a Deadline Date.');
+      setFormLoading(false);
+      return;
+    }
+    if (!staff1Id || !staff2Id || !staff3Id) {
+      setFormError('Please assign staff members for all 3 pipeline phases.');
+      setFormLoading(false);
+      return;
+    }
+
     try {
       // Upload PO files if any
       let poFilePath = '';
@@ -883,7 +919,7 @@ export default function ClientOrders() {
                   {/* Select Client & Select Order Type Side by Side */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Select Client</label>
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Select Client <span className="text-red-500">*</span></label>
                       <select
                         required
                         value={clientId}
@@ -897,7 +933,7 @@ export default function ClientOrders() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Order Type</label>
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Order Type <span className="text-red-500">*</span></label>
                       <select
                         required
                         value={orderTypeId}
@@ -926,13 +962,14 @@ export default function ClientOrders() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                       {/* PO Number */}
                       <div>
-                        <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">PO Number</label>
+                        <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">PO Number <span className="text-red-500">*</span></label>
                         <div className="relative">
                           <span className="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none">
                             <FileText className="h-3.5 w-3.5 text-orange-300" />
                           </span>
                           <input
                             type="text"
+                            required
                             value={poNo}
                             onChange={(e) => setPoNo(e.target.value)}
                             placeholder="e.g. PO-2026-001"
@@ -943,7 +980,7 @@ export default function ClientOrders() {
 
                       {/* Attach button */}
                       <div>
-                        <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">Attach Document</label>
+                        <label className="block text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">Attach Document <span className="text-red-500">*</span></label>
                         <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-orange-200 bg-white/80 hover:bg-orange-50 hover:border-brand-orange cursor-pointer transition-all group">
                           <div className="flex items-center justify-center h-6 w-6 rounded-md bg-orange-100 group-hover:bg-orange-200 transition-colors shrink-0">
                             <Upload className="h-3.5 w-3.5 text-brand-orange" />
@@ -1005,7 +1042,7 @@ export default function ClientOrders() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Order Requirements / Details</label>
+                    <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Order Requirements / Details <span className="text-red-500">*</span></label>
                     <textarea
                       required
                       rows={4}
@@ -1019,7 +1056,7 @@ export default function ClientOrders() {
                   {/* Quantity and Deadline Inputs */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Quantity (QTY)</label>
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Quantity (QTY) <span className="text-red-500">*</span></label>
                       <input
                         type="number"
                         min="1"
@@ -1031,7 +1068,7 @@ export default function ClientOrders() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Deadline Date</label>
+                      <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Deadline Date <span className="text-red-500">*</span></label>
                       <input
                         type="date"
                         required

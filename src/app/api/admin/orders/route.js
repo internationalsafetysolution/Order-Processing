@@ -80,8 +80,8 @@ export async function POST(request) {
   try {
     const { clientId, orderTypeId, details, qty, deadlineDate, staff1Id, staff2Id, staff3Id, poNo, poFilePath } = await request.json();
 
-    if (!clientId || !details || !staff1Id || !staff2Id || !staff3Id) {
-      return Response.json({ error: 'All fields are required' }, { status: 400 });
+    if (!clientId || !orderTypeId || !details || !deadlineDate || !poNo || !poFilePath || !staff1Id || !staff2Id || !staff3Id) {
+      return Response.json({ error: 'All fields (Client, Order Type, Details, Deadline Date, PO Number, PO File, and Staff Crew) are strictly required.' }, { status: 400 });
     }
 
     const currentPKTDate = getKarachiDate();
