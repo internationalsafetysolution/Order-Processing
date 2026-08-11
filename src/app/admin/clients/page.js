@@ -294,10 +294,13 @@ export default function ClientManagement() {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-50/90 border-b border-zinc-200 text-xs font-semibold text-zinc-600 uppercase tracking-wider">
+                  {/* Sr No Header */}
+                  <th className="py-3 px-3 w-16 text-center">Sr. No</th>
+
                   {/* ID Sortable Header */}
                   <th 
                     onClick={() => handleSort('id')} 
-                    title="Click to sort by ID"
+                    title="Click to sort by DB ID"
                     className="py-3 px-4 w-28 cursor-pointer select-none hover:bg-zinc-100/90 transition-colors group"
                   >
                     <div className="flex items-center gap-1.5 font-bold text-zinc-700">
@@ -343,8 +346,12 @@ export default function ClientManagement() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200">
-                {processedClients.map((client) => (
+                {processedClients.map((client, index) => (
                   <tr key={client.id} className="hover:bg-zinc-50/70 transition-colors">
+                    <td className="py-3 px-3 text-center whitespace-nowrap text-xs font-semibold text-zinc-400">
+                      {index + 1}
+                    </td>
+
                     <td className="py-3 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold text-zinc-500 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded">
                         #{client.id}
