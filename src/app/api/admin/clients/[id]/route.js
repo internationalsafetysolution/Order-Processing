@@ -15,13 +15,18 @@ export async function PUT(request, context) {
   try {
     const { name, email, phone, address } = await request.json();
 
-    if (!name || !email || !phone || !address) {
-      return Response.json({ error: 'All fields are required' }, { status: 400 });
+    if (!name || !name.trim()) {
+      return Response.json({ error: 'Company / Client Name is required' }, { status: 400 });
     }
+
+    const cleanName = name.trim();
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPhone = phone ? phone.trim() : '';
+    const cleanAddress = address ? address.trim() : '';
 
     await query(
       'UPDATE clients SET name = ?, email = ?, phone = ?, address = ? WHERE id = ?',
-      [name, email, phone, address, clientId]
+      [cleanName, cleanEmail, cleanPhone, cleanAddress, clientId]
     );
 
     return Response.json({ success: true, message: 'Client profile updated successfully' });

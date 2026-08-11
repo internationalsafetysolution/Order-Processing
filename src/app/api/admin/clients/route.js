@@ -29,13 +29,18 @@ export async function POST(request) {
   try {
     const { name, email, phone, address } = await request.json();
 
-    if (!name || !email || !phone || !address) {
-      return Response.json({ error: 'All fields are required' }, { status: 400 });
+    if (!name || !name.trim()) {
+      return Response.json({ error: 'Company / Client Name is required' }, { status: 400 });
     }
+
+    const cleanName = name.trim();
+    const cleanEmail = email ? email.trim() : '';
+    const cleanPhone = phone ? phone.trim() : '';
+    const cleanAddress = address ? address.trim() : '';
 
     const result = await query(
       'INSERT INTO clients (name, email, phone, address) VALUES (?, ?, ?, ?)',
-      [name, email, phone, address]
+      [cleanName, cleanEmail, cleanPhone, cleanAddress]
     );
 
     return Response.json({

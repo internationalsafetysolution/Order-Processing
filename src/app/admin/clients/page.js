@@ -297,7 +297,7 @@ export default function ClientManagement() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Company / Client Name</label>
+                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Company / Client Name <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -309,10 +309,9 @@ export default function ClientManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Email Address</label>
+                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Email Address <span className="text-zinc-400 font-normal lowercase">(optional)</span></label>
                 <input
                   type="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="billing@client.com"
@@ -321,10 +320,9 @@ export default function ClientManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Contact Phone</label>
+                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Contact Phone <span className="text-zinc-400 font-normal lowercase">(optional)</span></label>
                 <input
                   type="text"
-                  required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="e.g. 0300-1234567"
@@ -333,9 +331,8 @@ export default function ClientManagement() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Delivery / Billing Address</label>
+                <label className="block text-xs font-semibold text-zinc-700 uppercase tracking-wider mb-1">Delivery / Billing Address <span className="text-zinc-400 font-normal lowercase">(optional)</span></label>
                 <textarea
-                  required
                   rows={3}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}

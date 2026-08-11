@@ -218,11 +218,21 @@ async function ensureDatabaseAndPool() {
         CREATE TABLE IF NOT EXISTS clients (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
-          email VARCHAR(255) NOT NULL,
-          phone VARCHAR(100) NOT NULL,
-          address TEXT NOT NULL
+          email VARCHAR(255) NULL,
+          phone VARCHAR(100) NULL,
+          address TEXT NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       `);
+
+      try {
+        await pool.execute('ALTER TABLE clients MODIFY COLUMN email VARCHAR(255) NULL');
+      } catch (e) {}
+      try {
+        await pool.execute('ALTER TABLE clients MODIFY COLUMN phone VARCHAR(100) NULL');
+      } catch (e) {}
+      try {
+        await pool.execute('ALTER TABLE clients MODIFY COLUMN address TEXT NULL');
+      } catch (e) {}
 
       // Auto-create order_types table
       await pool.execute(`
