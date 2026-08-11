@@ -23,6 +23,8 @@ import {
   Upload
 } from 'lucide-react';
 import Link from 'next/link';
+import OrderDocumentDropdown from '@/components/OrderDocumentDropdown';
+import { getSafeFileUrl } from '@/lib/fileUtils';
 
 // Helper to convert images to WebP on the client side before upload
 const convertToWebP = (file) => {
@@ -765,11 +767,11 @@ export default function ClientOrders() {
                           <div className="flex items-center flex-wrap gap-1.5 mt-1.5 text-xs text-zinc-600">
                             <span className="px-1.5 py-0.5 bg-zinc-100 border border-zinc-200 text-zinc-800 text-[9px] font-bold rounded">PO: {order.po_no}</span>
                             {order.po_file_path && order.po_file_path.split(',').map((path, idx) => (
-                              <a key={idx} href={path} target="_blank" rel="noopener noreferrer"
+                              <a key={idx} href={getSafeFileUrl(path)} target="_blank" rel="noopener noreferrer"
                                 onClick={(e) => {
                                   if (!/\.pdf$/i.test(path)) {
                                     e.preventDefault();
-                                    setPreviewImageUrl(path);
+                                    setPreviewImageUrl(getSafeFileUrl(path));
                                   }
                                 }}
                                 className="text-[9px] text-brand-orange font-bold hover:underline">PO File {idx + 1}</a>
@@ -802,6 +804,10 @@ export default function ClientOrders() {
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-950 hover:bg-zinc-800 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer">
                             <Eye className="h-3.5 w-3.5" /><span>Track Flow</span>
                           </button>
+                          <OrderDocumentDropdown 
+                            order={order} 
+                            onPreviewImage={(url) => setPreviewImageUrl(url)} 
+                          />
                           {canEdit && (
                             <button onClick={() => handleOpenEditModal(order)}
                               className="p-1.5 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 hover:text-brand-orange rounded-lg transition-colors cursor-pointer">

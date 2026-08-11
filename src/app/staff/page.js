@@ -19,6 +19,8 @@ import {
   Layers,
   UserCheck
 } from 'lucide-react';
+import OrderDocumentDropdown from '@/components/OrderDocumentDropdown';
+import { getSafeFileUrl } from '@/lib/fileUtils';
 
 // Helper to convert images to WebP on the client side before upload
 const convertToWebP = (file) => {
@@ -759,29 +761,31 @@ export default function StaffDashboard() {
                     <div className="px-4 py-3 border-b border-zinc-100">
                       <div className="flex justify-between items-center mb-1.5">
                         <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">Order Details</p>
-                        {order.po_file_path && (
-                          <div className="flex items-center gap-1.5">
-                            {order.po_file_path.split(',').map((path, idx) => (
-                              <a
-                                key={idx}
-                                href={path}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                onClick={(e) => {
-                                  if (!/\.pdf$/i.test(path)) {
-                                    e.preventDefault();
-                                    setPreviewImageUrl(path);
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-brand-orange rounded text-[9px] font-bold transition-all shadow-xs cursor-pointer"
-                              >
-                                <Download className="h-2.5 w-2.5" />
-                                <span>Download PO {order.po_file_path.split(',').length > 1 ? `#${idx + 1}` : ''}</span>
-                              </a>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {order.po_file_path && order.po_file_path.split(',').map((path, idx) => (
+                            <a
+                              key={idx}
+                              href={getSafeFileUrl(path)}
+                              download
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => {
+                                if (!/\.pdf$/i.test(path)) {
+                                  e.preventDefault();
+                                  setPreviewImageUrl(getSafeFileUrl(path));
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-50 hover:bg-orange-100 border border-orange-200 text-brand-orange rounded text-[9px] font-bold transition-all shadow-xs cursor-pointer"
+                            >
+                              <Download className="h-2.5 w-2.5" />
+                              <span>Download PO {order.po_file_path.split(',').length > 1 ? `#${idx + 1}` : ''}</span>
+                            </a>
+                          ))}
+                          <OrderDocumentDropdown 
+                            order={order} 
+                            onPreviewImage={(url) => setPreviewImageUrl(url)} 
+                          />
+                        </div>
                       </div>
                       <p className="text-xs text-zinc-600 leading-relaxed line-clamp-2">{order.details}</p>
                     </div>

@@ -10,7 +10,7 @@ function formatKarachiDate() {
 
 function sanitizeName(str) {
   if (!str) return '';
-  return str.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  return str.replace(/[\\/:*?"<>|#]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 export async function POST(request) {
@@ -44,7 +44,7 @@ export async function POST(request) {
     let formattedOrder = 'Order';
     if (orderNo) {
       const cleanOrderNo = sanitizeName(orderNo).replace(/^Order\s*#?/i, '');
-      formattedOrder = `Order #${cleanOrderNo}`;
+      formattedOrder = `Order ${cleanOrderNo}`;
     }
 
     const dateStr = customDate ? sanitizeName(customDate) : formatKarachiDate();
